@@ -1,0 +1,19 @@
+{
+  "modes": [
+    {
+      "name": "xoxo",
+      "min_players": 2,
+      "max_players": 2,
+      "groups": [
+        {
+          "name": "players",
+          "min_players": 2,
+          "max_players": 2
+        }
+      ]
+    }
+  ],
+  "user_data": {
+    "project": "xoxo"
+  }
+}

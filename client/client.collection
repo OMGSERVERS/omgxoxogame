@@ -1,0 +1,14 @@
+name: "client"
+instances {
+  id: "server_client"
+  prototype: "/client/server_client/server_client.go"
+}
+instances {
+  id: "game_manager"
+  prototype: "/client/game_manager/game_manager.go"
+}
+collection_instances {
+  id: "xoxo_game"
+  collection: "/xoxo/xoxo.collection"
+}
+scale_along_z: 0

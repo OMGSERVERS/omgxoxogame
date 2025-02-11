@@ -1,0 +1,132 @@
+local omgplayer = require("omgservers.omgplayer.omgplayer")
+local xoxo = require("xoxo.xoxo")
+
+local SERVER_CLIENT = "client:/server_client#server_client"
+
+local function logged(self)
+	msg.post(".", "acquire_input_focus")
+	-- let the game know that we are connected
+	xoxo.show_menu()
+
+	self.runtime_qualifier = omgplayer.constants.LOBBY
+end
+
+local function joined(self, runtime_qualifier)
+	if runtime_qualifier == omgplayer.constants.MATCH then
+		print(socket.gettime() .. " [GAME_MANAGER] In a match")
+		if self.latest_callback then
+			self.latest_callback(true)
+		end
+
+		msg.post(SERVER_CLIENT, "message", {
+			qualifier = "start_request"
+		})
+	end
+end
+
+local function assigned(self, runtime_qualifier)
+	self.runtime_qualifier = runtime_qualifier
+	
+	if runtime_qualifier == omgplayer.constants.LOBBY then
+		if self.matchmaking_requested == true then
+			self.matchmaking_requested = false
+			msg.post(SERVER_CLIENT, "command", {
+				qualifier = "matchmaking_request"
+			})
+		end
+	end
+end
+
+local function received(self, message)
+	local message_qualifier = message.qualifier
+	if message_qualifier then
+		if message_qualifier == "game_state" then
+			local message_data = message.data
+			local state = message_data.state
+			local active_player = message_data.active_player
+			local other_player = message_data.other_player
+			local your_turn = message_data.your_turn
+			xoxo.match_update(state, active_player, other_player, your_turn)
+		elseif message_qualifier == "opponent_left" then 
+			print(socket.gettime() .. " [GAME_MANAGER] Opponent left")
+			xoxo.opponent_left()
+		else
+			print(socket.gettime() .. " [GAME_MANAGER] Unknown qualifier=" .. message_qualifier)
+		end
+	else
+		print(socket.gettime() .. " [GAME_MANAGER] Message qualifier is nil")
+	end
+end
+
+local function failed(self, reason)
+	if self.latest_callback then
+		self.latest_callback(false, reason)
+	end
+end
+
+function init(self)
+	xoxo.on_connect(function()
+		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_connect")
+		msg.post(SERVER_CLIENT, "connect", {})
+	end)
+
+	-- This will get called by the game when the player pressed the
+	-- Join button in the menu.
+	xoxo.on_join_match(function(callback)
+		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_join_match")
+		self.latest_callback = callback
+
+		if self.runtime_qualifier == omgplayer.constants.LOBBY then
+			msg.post(SERVER_CLIENT, "command", {
+				qualifier = "matchmaking_request"
+			})
+		else
+			self.matchmaking_requested = true
+		end
+		
+	end)
+
+	-- Called by the game when the player pressed the Leave button
+	-- when a game is finished (instead of waiting for the next match).
+	xoxo.on_leave_match(function()
+		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_leave_match")
+		
+		msg.post(SERVER_CLIENT, "message", {
+			qualifier = "leave_request",
+		})
+	end)
+
+	-- Called by the game when the player is trying to make a move.
+	xoxo.on_send_player_move(function(row, col)
+		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_send_player_move")
+		msg.post(SERVER_CLIENT, "message", {
+			qualifier = "player_move",
+			data = {
+				row = row,
+				col = col,
+			}
+		})
+	end)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("logged") then
+		logged(self)
+		
+	elseif message_id == hash("joined") then
+		local runtime_qualifier = message.runtime_qualifier
+		joined(self, runtime_qualifier)
+		
+	elseif message_id == hash("assigned") then
+		local runtime_qualifier = message.runtime_qualifier
+		assigned(self, runtime_qualifier)
+		
+	elseif message_id == hash("received") then
+		received(self, message)
+		
+	elseif message_id == hash("failed") then
+		local reason = message.reason
+		failed(self, reason)
+		
+	end
+end

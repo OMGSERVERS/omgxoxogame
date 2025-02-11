@@ -1,0 +1,141 @@
+local omgplayer = require("omgservers.omgplayer.omgplayer")
+
+local GAME_MANAGER = "client:/game_manager#game_manager"
+
+local function logged(self)
+	msg.post(GAME_MANAGER, "logged")
+end
+
+local function joined(self)
+	msg.post(GAME_MANAGER, "joined", {
+		runtime_qualifier = self.runtime_qualifier
+	})
+end
+
+local function assigned(self, runtime_qualifier, runtime_id)
+	print(socket.gettime() .. " [SERVER_CLIENT] Client was assigned, runtime_qualifier=" .. runtime_qualifier .. ", runtime_id=" .. runtime_id)
+	self.runtime_qualifier = runtime_qualifier
+	
+	msg.post(GAME_MANAGER, "assigned", {
+		runtime_qualifier = runtime_qualifier
+	})
+end
+
+local function received(self, message)
+	msg.post(GAME_MANAGER, "received", message)
+end
+
+local function failed(self, reason)
+	msg.post(GAME_MANAGER, "failed", {
+		reason = reason,
+	})
+end
+
+local function handle_event(self, event)
+	print(socket.gettime() .. " [SERVER_CLIENT] Event was received, event=" .. json.encode(event))
+
+	local event_qualifier = event.qualifier
+	local event_body = event.body
+
+	if event_qualifier == omgplayer.constants.SIGNED_UP then
+		local user_id = event_body.user_id
+		local password = event_body.password
+		print(socket.gettime() .. " [SERVER_CLIENT] User was created, user_id=" .. user_id)
+
+		self.omginstance:sign_in(user_id, password)
+
+		self.user_id = user_id
+		self.password = password
+
+	elseif event_qualifier == omgplayer.constants.SIGNED_IN then
+		local client_id = event_body.client_id
+		print(socket.gettime() .. " [SERVER_CLIENT] Client was created, client_id=" .. client_id)
+
+		self.client_id = client_id
+
+	elseif event_qualifier == omgplayer.constants.GREETED then
+		local version_id = event_body.version_id
+		local version_created = event_body.version_created
+		print(socket.gettime() .. " [SERVER_CLIENT] Client was greeted, version_id=" .. version_id .. ", version_created=" .. version_created)
+
+		logged(self)
+
+	elseif event_qualifier == omgplayer.constants.ASSIGNED then
+		local runtime_qualifier = event_body.runtime_qualifier
+		local runtime_id = event_body.runtime_id
+
+		assigned(self, runtime_qualifier, runtime_id)
+
+	elseif event_qualifier == omgplayer.constants.MESSAGE_RECEIVED then
+		local message = event_body.message
+		print(socket.gettime() .. " [SERVER_CLIENT] Message was received, message=" .. message)
+
+		local decoded_message = json.decode(message)
+		received(self, decoded_message)
+
+	elseif event_qualifier == omgplayer.constants.CONNECTION_UPGRADED then
+		print(socket.gettime() .. " [SERVER_CLIENT] Connection was upgraded")
+
+		joined(self)
+
+	elseif event_qualifier == omgplayer.constants.PLAYER_FAILED then
+		local reason = event_body.reason
+		print(socket.gettime() .. " [SERVER_CLIENT] Client failed, reason=" .. reason)
+
+		failed(self, reason)
+	end
+end
+
+local function connect(self)
+	local configuration
+	if sys.get_engine_info().is_debug then
+		configuration = require("client.localtesting")
+		print(socket.gettime() .. " [SERVER_CLIENT] Using localtesting configuration")
+	else
+		configuration = require("client.demoserver")
+		print(socket.gettime() .. " [SERVER_CLIENT] Using demoserver configuration")
+	end
+	pprint(configuration)
+
+	local options = {
+		tenant = configuration.tenant,
+		project = configuration.project,
+		stage = configuration.stage,
+		event_handler = function(event) handle_event(self, event) end,
+		service_url = configuration.url,
+		debug_logging = true,
+		trace_logging = false,
+	}
+	local omginstance = omgplayer:create()
+	self.omginstance = omginstance
+
+	omginstance:init(options)
+	omginstance:ping()
+	omginstance:sign_up()
+end
+
+local function send_command(self, message)
+	local json = json.encode(message)
+	self.omginstance:send_service_message(json)
+end
+
+local function send_message(self, message)
+	local json = json.encode(message)
+	self.omginstance:send_binary_message(json)
+end
+
+function update(self, dt)
+	if self.omginstance then
+		self.omginstance:update(dt)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("connect") then
+		connect(self)
+	elseif message_id == hash("command") then
+		send_command(self, message)
+	elseif message_id == hash("message") then
+		send_message(self, message)
+	end
+end
