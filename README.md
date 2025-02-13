@@ -3,12 +3,12 @@
 Backend for the [Defold XOXO game](https://github.com/defold/game-xoxo), powered
 by [OMGSERVERS](https://github.com/OMGSERVERS/omgservers).
 
-## Getting Started locally
+### Getting Started with the Sample Project
 
 - Run `./omgprojectctl.sh build` to build the game runtime in a Docker container.
-- Run `./omgtoolctl.sh localtesting up` to start the local testing environment in Docker.
-- Run `./omgtoolctl.sh localtesting init` to initialize the local testing server project.
-- Run `./omgtoolctl.sh localtesting install` to install the game runtime Docker container locally.
+- Run `./omgprojectctl.sh start` to start the local testing environment in Docker.
+- Run `./omgprojectctl.sh init` to initialize a project and developer account.
+- Run `./omgprojectctl.sh install` to install the game runtime locally.
 
 - Open `game.project` in Defold and run it (adjust the game instance count via Project -> Launched Instance Count -> 2
   instances)
