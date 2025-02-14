@@ -1,6 +1,6 @@
 return {
 	url = "http://localhost:8080",
-	tenant = "omgxoxogame",
+	tenant = "omgservers",
 	project = "omgxoxogame",
 	stage = "default",
 }
