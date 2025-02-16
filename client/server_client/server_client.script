@@ -73,8 +73,8 @@ local function handle_event(self, event)
 		local decoded_message = json.decode(message)
 		received(self, decoded_message)
 
-	elseif event_qualifier == omgplayer.constants.CONNECTION_UPGRADED then
-		print(socket.gettime() .. " [SERVER_CLIENT] Connection was upgraded")
+	elseif event_qualifier == omgplayer.constants.CONNECTION_DISPATCHED then
+		print(socket.gettime() .. " [SERVER_CLIENT] Connection was dispatched")
 
 		joined(self)
 
