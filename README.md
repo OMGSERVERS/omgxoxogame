@@ -1,6 +1,6 @@
 # OMGXOXOGAME
 
-Backend for the [Defold XOXO game](https://github.com/defold/game-xoxo), powered
+Version of [Defold XOXO game](https://github.com/defold/game-xoxo) powered
 by [OMGSERVERS](https://github.com/OMGSERVERS/omgservers).
 
 ### Getting Started with the Project
