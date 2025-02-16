@@ -5,6 +5,7 @@ export TZ=UTC
 
 docker run --rm -it \
     --network=host \
+    -e OMG_FORMATTING=${OMG_FORMATTING:-true} \
     -e OMG_LOCALTESTING_TENANT="omgservers" \
     -e OMG_LOCALTESTING_PROJECT="omgxoxogame" \
     -e OMG_LOCALTESTING_STAGE="default" \
