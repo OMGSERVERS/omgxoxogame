@@ -13,7 +13,7 @@ end
 
 local function joined(self, runtime_qualifier)
 	if runtime_qualifier == omgplayer.constants.MATCH then
-		print(socket.gettime() .. " [GAME_MANAGER] In a match")
+		print(os.date() .. " [GAME_MANAGER] In a match")
 		if self.latest_callback then
 			self.latest_callback(true)
 		end
@@ -48,13 +48,13 @@ local function received(self, message)
 			local your_turn = message_data.your_turn
 			xoxo.match_update(state, active_player, other_player, your_turn)
 		elseif message_qualifier == "opponent_left" then 
-			print(socket.gettime() .. " [GAME_MANAGER] Opponent left")
+			print(os.date() .. " [GAME_MANAGER] Opponent left")
 			xoxo.opponent_left()
 		else
-			print(socket.gettime() .. " [GAME_MANAGER] Unknown qualifier=" .. message_qualifier)
+			print(os.date() .. " [GAME_MANAGER] Unknown qualifier=" .. message_qualifier)
 		end
 	else
-		print(socket.gettime() .. " [GAME_MANAGER] Message qualifier is nil")
+		print(os.date() .. " [GAME_MANAGER] Message qualifier is nil")
 	end
 end
 
@@ -66,14 +66,14 @@ end
 
 function init(self)
 	xoxo.on_connect(function()
-		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_connect")
+		print(os.date() .. " [GAME_MANAGER] Handling xoxo.on_connect")
 		msg.post(SERVER_CLIENT, "connect", {})
 	end)
 
 	-- This will get called by the game when the player pressed the
 	-- Join button in the menu.
 	xoxo.on_join_match(function(callback)
-		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_join_match")
+		print(os.date() .. " [GAME_MANAGER] Handling xoxo.on_join_match")
 		self.latest_callback = callback
 
 		if self.runtime_qualifier == omgplayer.constants.LOBBY then
@@ -89,7 +89,7 @@ function init(self)
 	-- Called by the game when the player pressed the Leave button
 	-- when a game is finished (instead of waiting for the next match).
 	xoxo.on_leave_match(function()
-		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_leave_match")
+		print(os.date() .. " [GAME_MANAGER] Handling xoxo.on_leave_match")
 		
 		msg.post(SERVER_CLIENT, "message", {
 			qualifier = "leave_request",
@@ -98,7 +98,7 @@ function init(self)
 
 	-- Called by the game when the player is trying to make a move.
 	xoxo.on_send_player_move(function(row, col)
-		print(socket.gettime() .. " [GAME_MANAGER] Handling xoxo.on_send_player_move")
+		print(os.date() .. " [GAME_MANAGER] Handling xoxo.on_send_player_move")
 		msg.post(SERVER_CLIENT, "message", {
 			qualifier = "player_move",
 			data = {
